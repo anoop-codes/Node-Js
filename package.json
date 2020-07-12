@@ -1,0 +1,23 @@
+{
+  "name": "Node-Js",
+  "version": "1.0.0",
+  "description": "about Node js",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anoop-codes/Node-Js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/anoop-codes/Node-Js/issues"
+  },
+  "homepage": "https://github.com/anoop-codes/Node-Js#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
