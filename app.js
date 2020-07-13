@@ -1,115 +1,135 @@
 const express = require('express');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const config = require('config');
-
-//custom debugger, controlled form the env file.
-const logConsole = require('debug')('app:startup');
-const dbConsole = require('debug')('app:db');
-
-//Create the appln using express
+const mongoose = require('mongoose');
 const app = express();
 
-//config
-console.log(`APP NAME : ${config.get('app-name')}`);
-console.log(`MAIL SERVER : ${config.get('mail.host')}`);
-//setting the password of the mail server.
-//console.log(`MAIL SERVER PASSWORD: ${config.get('mail_password')}`);
-
-
-//Environment
-console.log(`NODE_ENV : ${process.env.NODE_ENV}`);
-console.log(`ENV THROUGH EXPRESS : ${app.get('env')}`);//by default return dev
-
-if (app.get('env') === 'production') {
-    //making all the console in production removed
-    console.log = function () { }
-}
-
-//can be configured from outside export DEBUG=app:startup,app:db //all app:*
-logConsole('startup console log');
-dbConsole('db console');
-console.log('normal console log');
-
-
-
-
-
-
-//view engine , templating engine is used to send dynamic page to clint
-app.set('view engine', 'pug');
-//set the folders
-app.set('views', './views');//default
-
-
-
-
-
-
-/*
- * middlware is func that take the req object and response or pass it the next middleware.
- * app.use() , call this function , to install a function in the middleware pipeline.middleware func are called in 
- * sequencec
- */
-
-
-//buid-in middleware 
+//body parse
 app.use(express.json());
-app.use(express.static('pubic')); //name of the folder , container images, css ...static assested, read Form the root of the file system.
-app.use(express.urlencoded()); //key=value&key=value,Html form payload.. older style , convert into JSON
 
-//custom milldlware
-app.use((req, res, next) => {
-    console.log('Logging...........');
-    //to pass control to next middlw ware
-    next();
+//connecting mongoDn
+mongoose.connect('mongodb://localhost/mongoDb-Demo', { useNewUrlParser: true, useUnifiedTopology: true }).then(() => console.log(`MongoDB Connected Successfully !!!`)).catch((error) => console.log(`DataBase Connection Error : ${error} `));
+
+//schema: define the shape of the document(row) in a collection(table)
+const courseSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        minlength: 5,
+        //match : regular exporessiomn
+        lowercase: true,
+        uppercase: false,
+        unique: true,
+        trim: true
+    },
+    author: {
+        type: String,
+        validate: {
+            isAsync: true,
+            validator: function (v, callback) {
+                // some async work
+                callback(
+                    //.. some result)
+                )
+            },
+            message: 'some async error message...'
+        }
+    },
+    tags: {
+        type: [String],
+        //enum: ['angular', 'nodejs', 'reactjs', 'C#'],// the value should belong the only this mentioned value
+        validate: {
+            validator: function (v) {
+                return v.length > 0
+            },
+            message: 'the tags length should be more then one'
+        }
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    },
+    price: {
+        type: Number,
+        required: function () {
+            return this.isPublished //no arrow function, as arrow func don't have there wown this.this will refer to that function on which is called./or inside
+        },
+        min: 0,
+        max: 5000,
+        get: (v) => Math.round(v),
+        set: (v) => Math.round(v)
+    },
+    isPublished: Boolean
 });
 
-//third party middleware
-app.use(helmet());//sometings with header(secure the http header);
-app.use(morgan('tiny'))//log the http request
+const Course = mongoose.model('course', courseSchema);
 
+/**
+ * Query:
+ * comparision operators:-
+ * eq : equal
+ * ne : (not equal)
+ * gt : greater then
+ * ghe : greater than equal to
+ * lt : less then
+ * lte : less then equal to
+ * in 
+ * nin : not in
+ * 
+ * 
+ * Logical Operators
+ * or 
+ * and
+ * 
+ * 
+ * regular expession
+ * ^: START STRING  
+ * $: END WITH A GIVEN STIRNG
+ * .*string*. : constaining the string
+ * 
+ * 
+ * /i : to make case insentive
+ */
 
+//get courses
+app.get('/api/courses', async (req, res) => {
+    const courses = await Course
+        //.find({ one or  more value for filtering..   author: 'Anoop'})
 
+        //Comparision Operator
+        // .find({ price: { $eq: 100 } })
+        // .find({ price: { $gte: 10, $lte: 300 } })
+        // .find({ price: { $in: [10, 50, 300, 100] } })
 
+        // Logical Operators
+        //.or([{ author: 'mosh' }, { isPublished: true }])// same and is used
 
-//sending html to the client side
-app.get('/', (req, res) => {
+        //regular expession
+        .find({ author: /.*mosh*./i })
 
-    res.render('index', { doc_title: 'Express APPlication', doc_message: 'working on it.....' })
+        .limit(10) //limit the value sliced
+        .sort({ name: 1 }) //1: accending order
+        .select({ name: 1, tags: 1, price: 1, author: 1 }) // only select propery is selected
+    res.status(200).send(courses)
 })
 
 
+//create courses
+app.post('/api/courses', async (req, res) => {
+    const course = new Course({
+        name: req.body.name,
+        author: req.body.author,
+        tags: req.body.tags,
+        price: req.body.price,
+        isPublished: req.body.isPublished
+    });
+
+    try {
+        const result = await course.save();
+        res.status(200).send(result)
+    } catch (error) {
+        res.status(404).send(error)
+    }
+})
 
 
-//api to get the parameter
-app.get('/api/cousers/:id', (req, res) => {
-    //by default id are typeOf string
-    const id = + req.params['id'];
-    res.send(`request id : ${id} `)
-});
-
-
-//api to get the queryParameter
-app.get('/api/cousers', (req, res) => {
-    const queryParams = req.query;
-    res.send(`request id : ${JSON.stringify(queryParams)} `)
-});
-
-
-
-
-
-
-//creating the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Listening to the port : ${PORT}`));
-
-/**
- * the port is dynamiclly assign in the porduction env. process.env.PORT : the environment varibale is the env, in which the appln run.we can set the value of the env from the outside.
- *
- * process : is a global object.
- *
- * to set the env varibale in mac use ,export (export PORT=5000).. and on window use set
- *
- */
