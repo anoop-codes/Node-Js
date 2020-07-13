@@ -1,0 +1,6 @@
+{
+    "app-name": "Express Practice app name in development",
+    "mail": {
+        "host": "development-mail-server"
+    }
+}
