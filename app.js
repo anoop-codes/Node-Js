@@ -34,18 +34,6 @@ console.log('normal console log');
 
 
 
-
-
-//view engine , templating engine is used to send dynamic page to clint
-app.set('view engine', 'pug');
-//set the folders
-app.set('views', './views');//default
-
-
-
-
-
-
 /*
  * middlware is func that take the req object and response or pass it the next middleware.
  * app.use() , call this function , to install a function in the middleware pipeline.middleware func are called in 
@@ -71,6 +59,10 @@ app.use(morgan('tiny'))//log the http request
 
 
 
+//view engine , templating engine is used to send dynamic page to clint
+app.set('view engine', 'pug');
+//set the folders
+app.set('views', './views');//default
 
 
 //sending html to the client side
