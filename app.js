@@ -12,6 +12,7 @@ app.use(express.json())
 
 //routers
 app.use('/api/genres', require('./routers/genres'));
+app.use('/api/movies', require('./routers/movies'));
 
 //creating the server
 const PORT = process.env.PORT || 3000;
