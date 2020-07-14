@@ -1,7 +1,11 @@
 const express = require('express');
+const mongoose = require('mongoose');
 
 //Create the appln using express
 const app = express();
+
+//db commention
+mongoose.connect('mongodb://localhost/Project-Vidly', { useNewUrlParser: true, useUnifiedTopology: true }).then(() => console.log(`MongoDB Connected Successfully !!!`)).catch((error) => console.log(`DataBase Connection Error : ${error} `));
 
 //body parser
 app.use(express.json())

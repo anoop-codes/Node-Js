@@ -1,73 +1,82 @@
 const express = require('express');
 const router = express.Router();
 const Joi = require('joi');
+const { Genre, genreValidate } = require('../models/genre');
 
-let genres = [
-    { name: 'action', id: '100' },
-    { name: 'romance', id: '101' },
-    { name: 'sci-fi', id: '102' },
-    { name: 'war', id: '103' },
-    { name: 'thriller', id: '104' }
-]
 
 //get Genres
-router.get('/', (req, res) => {
-
-    res.status(200).send(genres);
+router.get('/', async (req, res) => {
+    try {
+        const genres = await Genre.find();
+        res.status(200).send(genres);
+    } catch (error) {
+        res.status(500).send(error);
+    }
 });
 
 
 //create Genres
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
 
-    const { error } = generaValidate(req);
+    const { error } = genreValidate(req.body);
     if (error) return res.status(404).send(error.details[0].message);
 
-    const isExist = genres.find((genre) => genre.name === req.body['name']);
-    if (isExist) res.status(404).send(`${req.body.name} already exist`)
+    const isGenreExist = await Genre.findOne({ name: req.body.name });
+    if (isGenreExist) return res.status(400).send(`${req.body.name} already exist`)
 
-    genres = [...genres, {
-        name: req.body.name,
-        id: genres.length + 1
-    }];
+    const genre = new Genre({
+        name: req.body.name
+    })
 
-    res.status(200).send(genres)
+    try {
+        const result = await genre.save();
+        res.status(200).send(result)
+    } catch (error) {
+        res.status(500).send(error);
+    }
 
 });
 
 
 //update Genres
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const id = req.params['id'];
 
-    const { error } = generaValidate(req);
+    const { error } = genreValidate(req.body);
     if (error) return res.status(404).send(error.details[0].message);
 
-    const isExistIndex = genres.findIndex((genre) => genre.id === id);
+    try {
+        const genre = await Genre.findByIdAndUpdate({ _id: id }, {
+            $set: {
+                name: req.body.name
+            }
+        }, { new: true });
 
-    if (isExistIndex < 0) return res.status(404).send(`${id} don't exist`);
+        if (!genre) return res.status(404).send(`inValid genre Id`);
 
-    genres[isExistIndex].name = req.body.name;
+        res.status(200).send(genre)
 
-    res.status(200).send(`genera successfully updated`)
+    } catch (error) {
+        res.status(500).send("something went worng");
+    }
 
 });
 
 
 //delete Genres
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
+    try {
+        const genre = await Genre.findOneAndDelete({ _id: req.params.id });
 
+        if (!genre) return res.status(404).send(`inValid genre Id`);
+
+        res.status(200).send(genre)
+    } catch (error) {
+        res.status(500).send("something went worng");
+    }
 });
 
 
-
-function generaValidate(req) {
-    const schema = {
-        name: Joi.string().required()
-    }
-
-    return Joi.validate(req.body, schema)
-}
 
 
 module.exports = router;
