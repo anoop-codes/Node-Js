@@ -1,0 +1,1 @@
+"this is the static file served from app.use(express.static) middleware"
