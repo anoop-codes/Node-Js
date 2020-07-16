@@ -1,18 +1,70 @@
 const express = require('express');
-const Joi = require('joi');
+const { validation, Course } = require('../models/course');
 
 const router = express.Router();
 
-const courses = [
-    { id: 1, name: "javaScript" },
-    { id: 2, name: "C#" },
-    { id: 3, name: "Node js" },
-    { id: 4, name: "ANgular" },
-]
+//comparsion
+/**
+ * eg : equal
+ * ne : not equal
+ * gt : greater then
+ * gte : greater then or equal
+ * lt : less then
+ * lte : less then or equal 
+ * in 
+ * nin : no in
+ */
+
+//logical operator
+/**
+ * or
+ * and 
+ */
+
+//regular exp
+/**
+ * ^ : start with
+ * $ : end with
+ * .*xyz.* : containing
+ * /i : case insensative
+ */
+
+//all data
+router.get('/', async (req, res) => {
+    const pageNumber = 2;
+    const pageSize = 5;
+    //api/coursed?pageNumber=2&pageSize=5
+
+    try {
+        const courses = await Course
+            .find()
+
+            //comparsion
+            //.find({ price: { $gte: 200 } })
+            // .find({ price: { $in: [50, 100, 200, 300] } })
+            //.find({ price: { $gte: 50, $lt: 300 } })
+
+            //logical operator
+            // .find()
+            // .or([{ price: { $gte: 400 } }, { author: 'Anoop' }])
+
+            //reqularal expression
+            //.find({ author: /.*mosh.*/i })
+
+            //pagination
+            // .skip((pageNumber - 1) * pageSize)
+            // .limit(pageSize)
 
 
-router.get('/', (req, res) => {
-    res.send(courses);
+            .sort({ name: 1 }) //1 : ace order
+        // .count() // send the count of doc that match this ceriteria
+        // .select({ name: 1, price: 1 }) // only selected property is send
+
+
+        res.status(200).send(courses);
+    } catch (error) {
+        res.status(500).send(`Error while Fetching all the course , ${error}`);
+    }
 });
 
 
@@ -27,24 +79,32 @@ router.get('/:id', (req, res) => {
 
 
 //post
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { error } = validation(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const course = {
-        id: courses.length + 1,
-        name: req.body.name
-    };
-    courses.push(course);
+    const course = new Course({
+        name: req.body.name,
+        author: req.body.author,
+        tags: req.body.tags,
+        isPublished: req.body.isPublished,
+        price: req.body.price
+    });
 
-    res.status(200).send(course);
+    try {
+        const result = await course.save();
+
+        res.status(200).send(result);
+    } catch (error) {
+        res.status(500).send(`Error while creating the course , ${error}`);
+    }
 });
 
 
-//put
-router.put('/:id', (req, res) => {
+//update : queryFirst
+router.put('/qf/:id', async (req, res) => {
     //check for post
-    const course = courses.find(c => c.id === +req.params['id']);
+    const course = await Course.findById(req.params['id']);
     if (!course) return res.status(404).send('Course Not Found');
 
     //validation 
@@ -52,32 +112,78 @@ router.put('/:id', (req, res) => {
     if (error) return res.status(400).send(error.details[0].message);
 
     //updating the course
-    course.name = req.body.name;
+    course.set({
+        name: req.body.name,
+        author: req.body.author,
+        tags: req.body.tags,
+        isPublished: req.body.isPublished,
+        price: req.body.price
+    })
 
-    res.status(200).send(course);
+    try {
+        const result = await course.save();
+
+        res.status(200).send(result);
+    } catch (error) {
+        res.status(500).send(`Error while upating the course , ${error}`);
+    }
+});
+
+//update : updateFirst
+router.put('/uf/:id', async (req, res) => {
+
+    //check for post
+
+    //can update multipal doc in one go
+    // const course = await Course.update({isPubich : true});
+    //check for post
+
+    try {
+
+        const course = await Course.findById(req.params['id']);
+        if (!course) return res.status(404).send('Course Not Found');
+
+        const updatedCourse = await Course.findByIdAndUpdate(req.params['id'], {
+            //update object
+            //$set
+            //$int : directly in DB
+            //$min , $max , $mul , $unset
+            $set: {
+                name: req.body.name,
+                author: req.body.author,
+                tags: req.body.tags,
+                isPublished: req.body.isPublished,
+                price: req.body.price
+            }
+        }, { new: true, useFindAndModify: false });
+
+        res.status(200).send(updatedCourse);
+
+    } catch (error) {
+        res.status(500).send(`Error while upating the course , ${error}`);
+    }
 });
 
 
 //delete
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     //check for post
-    const course = courses.find(c => c.id === +req.params['id']);
-    if (!course) return res.status(404).send('Course Not Found');
+    try {
+        const course = await Course.findById(req.params['id']);
+        if (!course) return res.status(404).send('Course Not Found');
 
-    const index = courses.indexOf(course);
+        //findByIdAndDelete ,findOneAndDelete : send the deleted obj
+        //deleteOne : send the status of delete
+        const result = await Course.deleteOne({ _id: req.params['id'] });
 
-    courses.splice(index, 1);
+        res.status(200).send(result);
 
-    res.status(200).send(course);
+    } catch (error) {
+        res.status(500).send(`Error while Deleting the course , ${error}`);
+    }
 });
 
 
-function validation(data) {
-    const schema = {
-        name: Joi.string().min(1).required().label('NAME')
-    }
-    return Joi.validate(data, schema);
-}
 
 
 module.exports = router;
