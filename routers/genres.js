@@ -1,18 +1,22 @@
 const express = require('express');
-const Joi = require('joi');
+const { Genre, validation } = require('../models/genres');
 
+//router
 const router = express.Router();
 
-const genres = [
-    { id: 1, name: "Action" },
-    { id: 2, name: "Comedy" },
-    { id: 3, name: "War" },
-    { id: 4, name: "Darama" },
-]
-
-
-router.get('/', (req, res) => {
-    res.send(genres);
+router.get('/', async (req, res) => {
+    try {
+        const genres = await Genre.find().sort('name');
+        res.send({
+            data: genres,
+            status: 200
+        });
+    } catch (error) {
+        res.send({
+            error: `Error while getting the data : ${error}`,
+            status: 500
+        });
+    }
 });
 
 
@@ -71,13 +75,6 @@ router.delete('/:id', (req, res) => {
     res.status(200).send(genre);
 });
 
-
-function validation(data) {
-    const schema = {
-        name: Joi.string().min(1).required().label('NAME')
-    }
-    return Joi.validate(data, schema);
-}
 
 
 module.exports = router;
