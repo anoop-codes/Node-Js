@@ -7,25 +7,55 @@ const courseSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-        lowercase: true
+        lowercase: true,
+        // match: 'regular express',
+        maxlength: 255,
+        minlength: 5
+    },
+    category: {
+        type: String,
+        enum: ['backend', 'fronend'] //other then this value will give error
     },
     author: {
-        type: String
+        type: String,
+        unique: true,
+        validate: {
+            isAsync: true,
+            validator: function (v, callback) {
+                setTimeout(function () {
+                    //...logic
+                    callback('is unique...')
+                }, 1000)
+            },
+            message: 'author name is already taken'
+        }
     },
     date: {
         type: Date,
         default: Date.now
     },
     tags: {
-        type: [String]
+        type: Array,
+        validate: {
+            validator: function (v) {
+                return v.length > 0
+            },
+            message: 'tag should have alteast one tag'
+        }
+
     },
     isPublished: {
         type: Boolean
     },
     price: {
         type: Number,
+        min: 0,
+        max: 100000,
         get: (v) => Math.round(v),
-        set: (v) => Math.round(v)
+        set: (v) => Math.round(v),
+        required: function () {//arrow func is used here
+            return this.isPublished
+        }
     }
 });
 
