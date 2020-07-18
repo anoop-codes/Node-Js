@@ -14,6 +14,7 @@ mongoose.connect('mongodb://localhost/Project-Vidly', { useNewUrlParser: true, u
 
 //router
 app.use('/api/genres', require('./routers/genres'));
+app.use('/api/customers', require('./routers/customers'));
 
 
 const PORT = process.env.PORT || 3000;

@@ -1,19 +1,19 @@
 const express = require('express');
-const { Genre, validation } = require('../models/genres');
+const { Customer, validation } = require('../models/customers');
 
 //router
 const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const genres = await Genre.find().sort('name').select();
+        const customers = await Customer.find().sort('name');
         res.status(200).send({
-            data: genres,
+            data: customers,
             status: 200
         });
     } catch (error) {
         res.status(500).send({
-            error: `Error while getting the genre : ${error}`,
+            error: `Error while getting the customer : ${error}`,
             status: 500
         });
     }
@@ -23,10 +23,10 @@ router.get('/', async (req, res) => {
 //router parameter
 router.get('/:id', (req, res) => {
 
-    const genre = genres.find(c => c.id === +req.params['id']);
-    if (!genre) return res.status(404).send('Genre Not Found');
+    const customer = customers.find(c => c.id === +req.params['id']);
+    if (!customer) return res.status(404).send('Customer Not Found');
 
-    res.status(200).send({ data: genre })
+    res.status(200).send({ data: customer })
 });
 
 
@@ -35,12 +35,14 @@ router.post('/', async (req, res) => {
     const { error } = validation(req.body);
     if (error) return res.status(400).send(error.details[0].message);
 
-    const genre = new Genre({
-        name: req.body.name
+    const customer = new Customer({
+        name: req.body.name,
+        isGold: req.body.isGold,
+        phoneNumber: req.body.phoneNumber
     });
 
     try {
-        const result = await genre.save();
+        const result = await customer.save();
         res.status(200).send({
             data: result,
             status: 200
@@ -48,7 +50,7 @@ router.post('/', async (req, res) => {
 
     } catch (error) {
         res.status(500).send({
-            error: `Error while creating the genre : ${error}`,
+            error: `Error while creating the customer : ${error}`,
             status: 500
         });
     }
@@ -59,26 +61,28 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         //check for post
-        const genre = await Genre.findById(req.params['id']);
-        if (!genre) return res.status(404).send('Genre Not Found');
+        const customer = await Customer.findById(req.params['id']);
+        if (!customer) return res.status(404).send('Customer Not Found');
 
         //validation 
         const { error } = validation(req.body);
         if (error) return res.status(400).send(error.details[0].message);
 
-        //updating the genre
-        genre.set({
-            name: req.body.name
+        //updating the customer
+        customer.set({
+            name: req.body.name,
+            isGold: req.body.isGold,
+            phoneNumber: req.body.phoneNumber
         })
 
         res.status(200).send({
-            data: genre,
+            data: customer,
             status: 200
         });
 
     } catch (error) {
         res.status(500).send({
-            error: `Error while updating the genre : ${error}`,
+            error: `Error while updating the customer : ${error}`,
             status: 500
         });
     }
@@ -89,10 +93,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     //check for post
     try {
-        const genre = await Genre.findById(req.params['id']);
-        if (!genre) return res.status(404).send('Genre Not Found');
+        const customer = await Customer.findById(req.params['id']);
+        if (!customer) return res.status(404).send('Customer Not Found');
 
-        const result = await Genre.findByIdAndDelete(req.params['id'])
+        const result = await Customer.findByIdAndDelete(req.params['id'])
 
         res.status(200).send({
             data: result,
@@ -100,7 +104,7 @@ router.delete('/:id', async (req, res) => {
         });
     } catch (error) {
         res.status(500).send({
-            error: `Error while Deleting the genre : ${error}`,
+            error: `Error while Deleting the customer : ${error}`,
             status: 500
         });
     }
