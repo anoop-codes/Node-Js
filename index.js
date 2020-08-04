@@ -8,18 +8,36 @@ const movies = require('./routes/movies');
 const rentals = require('./routes/rentals');
 const express = require('express');
 const config = require('config');
+const logger = require('./utils/logger');
 
 const Joi = require('joi');
 Joi.objectId = require('joi-objectid')(Joi);
 
 const app = express();
 
+//process raise/emit the error, with on we subsr the error
+//this only work with only sync code and not with async error..
+process.on('uncaughtException', (error) => {
+  logger.log({ level: 'info', message: error.message });
+});
+
+
+//unhandle rejection
+process.on('unhandledRejection', (error) => {
+  logger.log({ level: 'info', message: error.message });
+});
+
+//it is not caught by the error middleware as it occure out side the context of express... 
+throw new Error('something failed during the startup....');
+const p = Promise.reject(new Error('promise error'));
+p.then(() => { })
+
+
+
 if (!config.get('jwtPrivateKey')) {
   console.log('FETAL ERROR: jwtPrivateKey is not avaibale');
   process.exit(1)
 }
-
-
 
 mongoose.connect('mongodb://localhost/vidly')
   .then(() => console.log('Connected to MongoDB...'))

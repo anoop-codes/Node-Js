@@ -1,1 +1,4 @@
-{"level":"info","message":"Genre validation failed: name: Path `name` (`war`) is shorter than the minimum allowed length (5)."}
+
+{"level":"info","message":"something failed during the startup...."}
+{"level":"info","message":"something failed during the startup...."}
+{"level":"info","message":"something failed during the startup...."}
